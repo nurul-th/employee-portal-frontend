@@ -11,7 +11,9 @@ function roleLower(user) {
 export default function DocumentsList() {
   const { user } = useAuth();
   const role = roleLower(user);
+
   const canUpload = role.includes("admin") || role.includes("manager");
+  const canEdit = role.includes("admin") || role.includes("manager");
 
   const [docs, setDocs] = useState([]);
   const [departments, setDepartments] = useState([]);
@@ -39,20 +41,40 @@ export default function DocumentsList() {
 
     try {
       const params = {};
-      if (search) params.search = search;
-      if (departmentId) params.department_id = departmentId;
-      if (categoryId) params.category_id = categoryId;
+
+      // 🔎 SEARCH aliases (support backend naming mismatch)
+      if (search) {
+        params.search = search;
+        params.q = search;
+        params.keyword = search;
+      }
+
+      // 🏷 CATEGORY aliases
+      if (categoryId) {
+        params.category_id = categoryId;
+        params.document_category_id = categoryId;
+      }
+
+      // 🏢 DEPARTMENT aliases
+      if (departmentId) {
+        params.department_id = departmentId;
+        params.document_department_id = departmentId;
+      }
+
+      console.log("LOAD DOCS params:", params);
 
       const res = await api.get("/documents", { params });
 
       // tolerate pagination / direct array
       const data = res.data?.data?.data ?? res.data?.data ?? res.data ?? [];
       setDocs(Array.isArray(data) ? data : []);
+
     } catch (e) {
       setError(e?.response?.data?.message || "Failed to load documents.");
     } finally {
       setBusy(false);
     }
+
   }
 
   useEffect(() => {
@@ -112,7 +134,7 @@ export default function DocumentsList() {
           <select
             className="rounded-lg border p-3 text-sm"
             value={categoryId}
-            onChange={(e) => setCategoryId(e.target.value)}
+            onChange={(e) => setCategoryId(String(e.target.value))}
           >
             <option value="">All Categories</option>
             {categories.map((c) => (
@@ -125,7 +147,7 @@ export default function DocumentsList() {
           <select
             className="rounded-lg border p-3 text-sm"
             value={departmentId}
-            onChange={(e) => setDepartmentId(e.target.value)}
+            onChange={(e) => setDepartmentId(String(e.target.value))}
           >
             <option value="">All Departments</option>
             {departments.map((d) => (
@@ -174,22 +196,50 @@ export default function DocumentsList() {
                   <th className="py-2">Category</th>
                   <th className="py-2">Department</th>
                   <th className="py-2">Access</th>
+                  <th className="py-2">Actions</th>
                 </tr>
               </thead>
+
               <tbody>
                 {docs.map((d) => (
                   <tr key={d.id} className="border-t">
                     <td className="py-2 font-medium">
-                      <Link className="underline" to={`/documents/${d.id}`}>
-                        {d.title}
-                      </Link>
+                      {d.title}
                       <div className="text-xs text-gray-500">
                         {d.description || ""}
                       </div>
                     </td>
-                    <td className="py-2">{d.category?.title || d.category_title || "—"}</td>
-                    <td className="py-2">{d.department?.name || d.department_name || "—"}</td>
+
+                    <td className="py-2">
+                      {d.category?.title || d.category_title || "—"}
+                    </td>
+
+                    <td className="py-2">
+                      {d.department?.name || d.department_name || "—"}
+                    </td>
+
                     <td className="py-2">{d.access_level || "—"}</td>
+
+                    {/* ✅ INI row <tr> tambah last <td> */}
+                    <td className="py-2">
+                      <div className="flex flex-wrap gap-2">
+                        <Link
+                          className="rounded-lg border px-3 py-1 text-xs"
+                          to={`/documents/${d.id}`}
+                        >
+                          Details
+                        </Link>
+
+                        {canEdit && (
+                          <Link
+                            className="rounded-lg bg-gray-900 px-3 py-1 text-xs text-white"
+                            to={`/documents/${d.id}/edit`}
+                          >
+                            Edit
+                          </Link>
+                        )}
+                      </div>
+                    </td>
                   </tr>
                 ))}
               </tbody>

@@ -7,6 +7,7 @@ import Dashboard from "./pages/Dashboard";
 import DocumentsList from "./pages/DocumentsList"; 
 import UploadDocument from "./pages/UploadDocument";
 import DocumentDetails from "./pages/DocumentDetails";
+import EditDocument from "./pages/EditDocument";
 
 function AppLayout() {
   return (
@@ -40,6 +41,8 @@ export default function App() {
       <Route path="*" element={<Navigate to="/login" replace />} />
       <Route path="/documents/upload" element={<UploadDocument />} />
       <Route path="/documents/:id" element={<DocumentDetails />} />
+
+      <Route path="/documents/:id/edit" element={<EditDocument />} />
     </Routes>
   );
 }
