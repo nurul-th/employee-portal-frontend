@@ -4,8 +4,8 @@ import Navbar from "./components/Navbar";
 
 import Login from "./pages/Login";
 import Dashboard from "./pages/Dashboard";
+import DocumentsList from "./pages/DocumentsList"; // kalau file ni belum ada, comment dulu
 
-// Layout untuk page yang dah login
 function AppLayout() {
   return (
     <div className="min-h-screen bg-gray-50">
@@ -20,10 +20,8 @@ function AppLayout() {
 export default function App() {
   return (
     <Routes>
-      {/* Public route */}
       <Route path="/login" element={<Login />} />
 
-      {/* Protected routes */}
       <Route
         element={
           <ProtectedRoute>
@@ -33,10 +31,11 @@ export default function App() {
       >
         <Route path="/" element={<Navigate to="/dashboard" replace />} />
         <Route path="/dashboard" element={<Dashboard />} />
-        {/* nanti kita tambah documents routes kat sini */}
+
+        {/* Kalau DocumentsList belum siap / import error, comment 2 line ni dulu */}
+        <Route path="/documents" element={<DocumentsList />} />
       </Route>
 
-      {/* Fallback */}
       <Route path="*" element={<Navigate to="/login" replace />} />
     </Routes>
   );
