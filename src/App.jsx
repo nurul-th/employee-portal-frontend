@@ -4,7 +4,9 @@ import Navbar from "./components/Navbar";
 
 import Login from "./pages/Login";
 import Dashboard from "./pages/Dashboard";
-import DocumentsList from "./pages/DocumentsList"; // kalau file ni belum ada, comment dulu
+import DocumentsList from "./pages/DocumentsList"; 
+import UploadDocument from "./pages/UploadDocument";
+import DocumentDetails from "./pages/DocumentDetails";
 
 function AppLayout() {
   return (
@@ -32,11 +34,12 @@ export default function App() {
         <Route path="/" element={<Navigate to="/dashboard" replace />} />
         <Route path="/dashboard" element={<Dashboard />} />
 
-        {/* Kalau DocumentsList belum siap / import error, comment 2 line ni dulu */}
         <Route path="/documents" element={<DocumentsList />} />
       </Route>
 
       <Route path="*" element={<Navigate to="/login" replace />} />
+      <Route path="/documents/upload" element={<UploadDocument />} />
+      <Route path="/documents/:id" element={<DocumentDetails />} />
     </Routes>
   );
 }
