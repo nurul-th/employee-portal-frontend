@@ -70,9 +70,9 @@ cd frontend-employee-document-portal
 
 👥 Demo Accounts
 Role	| Email	    | Password
-Admin	admin@example.com | password
-Manager	manager@example.com | password
-Employee	employee@example.com | password
+Admin	| admin@example.com | password
+Manager	| manager@example.com | password
+Employee	| employee@example.com | password
 
 6. Pages
     /login
