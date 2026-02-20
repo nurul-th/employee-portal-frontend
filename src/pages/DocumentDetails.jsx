@@ -4,9 +4,10 @@ import api from "../api/client";
 import LoadingSpinner from "../components/LoadingSpinner";
 import { useAuth } from "../auth/AuthContext";
 import ConfirmDialog from "../components/ConfirmDialog";
+import Alert from "../components/Alert";
+import { extractErrorMessage } from "../utils/errors";
 
 function getRoleName(user) {
-  // support: user.role, user.roles (array of strings), user.roles (array of objects)
   if (user?.role) return String(user.role);
   if (Array.isArray(user?.roles) && user.roles.length > 0) {
     const first = user.roles[0];
@@ -28,18 +29,21 @@ export default function DocumentDetails() {
   const [doc, setDoc] = useState(null);
   const [busy, setBusy] = useState(true);
   const [downloading, setDownloading] = useState(false);
-  const [deleting, setDeleting] = useState(false);
+
   const [error, setError] = useState("");
+  const [success, setSuccess] = useState("");
+
   const [confirmOpen, setConfirmOpen] = useState(false);
 
   async function load() {
     setError("");
     setBusy(true);
+
     try {
       const res = await api.get(`/documents/${id}`);
       setDoc(res.data?.data ?? res.data);
     } catch (err) {
-      setError(err?.response?.data?.message || "Failed to load document.");
+      setError(extractErrorMessage(err, "Failed to load document."));
     } finally {
       setBusy(false);
     }
@@ -52,8 +56,11 @@ export default function DocumentDetails() {
 
   async function download() {
     setError("");
+    setSuccess("");
+
     try {
       setDownloading(true);
+
       const res = await api.get(`/documents/${id}/download`, {
         responseType: "blob",
         validateStatus: () => true,
@@ -61,12 +68,14 @@ export default function DocumentDetails() {
 
       if (res.status !== 200) {
         const text = await res.data.text();
+
         try {
           const json = JSON.parse(text);
           setError(json.message || `Download failed (${res.status}).`);
         } catch {
           setError(`Download failed (${res.status}).`);
         }
+
         return;
       }
 
@@ -82,6 +91,8 @@ export default function DocumentDetails() {
       a.click();
       a.remove();
       window.URL.revokeObjectURL(blobUrl);
+
+      setSuccess("Download started.");
     } catch {
       setError("Download failed.");
     } finally {
@@ -91,27 +102,32 @@ export default function DocumentDetails() {
 
   async function doDelete() {
     setError("");
-    try {
-      setDeleting(true);
-      await api.delete(`/documents/${id}`);
-      setConfirmOpen(false);
+    setSuccess("");
+
+  try {
+    await api.delete(`/documents/${id}`);
+
+    setSuccess("Document deleted successfully.");
+    setConfirmOpen(false);
+
+    setTimeout(() => {
       nav("/documents");
-    } catch (err) {
-      setError(err?.response?.data?.message || "Delete failed.");
-      setConfirmOpen(false);
-    } finally {
-      setDeleting(false);
-    }
+    }, 700);
+  } catch (err) {
+    setError(extractErrorMessage(err, "Delete failed."));
+    setConfirmOpen(false);
   }
+}
 
   return (
     <div className="space-y-4">
-      <div className="flex items-center justify-between">
+      {/* Header */}
+      <div className="flex flex-wrap items-center justify-between gap-2">
         <Link to="/documents" className="text-sm underline">
           ← Back to list
         </Link>
 
-        <div className="flex gap-2">
+        <div className="flex flex-wrap gap-2">
           {canEdit && (
             <Link
               to={`/documents/${id}/edit`}
@@ -140,23 +156,26 @@ export default function DocumentDetails() {
         </div>
       </div>
 
+      {/* Alerts */}
+      {!busy && success && <Alert type="success">{success}</Alert>}
+      {!busy && error && <Alert type="error">{error}</Alert>}
+
+      {/* Content */}
       <div className="rounded-2xl bg-white p-5 shadow">
         {busy && <LoadingSpinner label="Loading document..." />}
 
-        {!busy && error && (
-          <div className="rounded-lg border border-red-200 bg-red-50 p-3 text-sm text-red-800">
-            {error}
-          </div>
-        )}
-
         {!busy && !error && !doc && (
-          <div className="text-sm text-gray-600">Document not found.</div>
+          <Alert type="info">
+            Document not found or you do not have permission to view it.
+          </Alert>
         )}
 
         {!busy && doc && (
           <div className="space-y-2">
             <div className="text-2xl font-bold">{doc.title}</div>
-            <div className="text-sm text-gray-600">{doc.description || "—"}</div>
+            <div className="text-sm text-gray-600">
+              {doc.description || "No description provided."}
+            </div>
 
             <div className="mt-4 grid gap-3 sm:grid-cols-2">
               <div className="rounded-xl border p-4">
@@ -187,15 +206,14 @@ export default function DocumentDetails() {
         )}
       </div>
 
+      {/* Confirm delete */}
       <ConfirmDialog
         open={confirmOpen}
         title="Delete document?"
-        message="This action cannot be undone. Are you sure you want to delete this document?"
+        message="This action cannot be undone. Are you sure?"
         confirmText="Yes, delete"
         cancelText="Cancel"
-        danger
-        busy={deleting}
-        onClose={() => setConfirmOpen(false)}
+        onCancel={() => setConfirmOpen(false)}
         onConfirm={doDelete}
       />
     </div>

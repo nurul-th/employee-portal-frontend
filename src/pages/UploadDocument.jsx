@@ -3,6 +3,8 @@ import { useNavigate } from "react-router-dom";
 import api from "../api/client";
 import { useAuth } from "../auth/AuthContext";
 import LoadingSpinner from "../components/LoadingSpinner";
+import Alert from "../components/Alert";
+import { extractErrorMessage } from "../utils/errors";
 
 function roleLower(user) {
   return String(user?.role || user?.roles?.[0] || "").toLowerCase();
@@ -31,6 +33,9 @@ export default function UploadDocument() {
   const [error, setError] = useState("");
   const [success, setSuccess] = useState("");
 
+  // field-level errors
+  const [fieldErrors, setFieldErrors] = useState({});
+
   useEffect(() => {
     (async () => {
       try {
@@ -38,39 +43,43 @@ export default function UploadDocument() {
           api.get("/departments"),
           api.get("/categories"),
         ]);
+
         setDepartments(depRes.data?.data ?? depRes.data ?? []);
         setCategories(catRes.data?.data ?? catRes.data ?? []);
       } catch {
-        // ignore - form still usable if master data already seeded? but better to show error later if needed
+        setError("Failed to load categories/departments.");
       }
     })();
   }, []);
 
   if (!canUpload) {
     return (
-      <div className="rounded-2xl bg-white p-5 shadow">
-        <div className="rounded-lg border border-red-200 bg-red-50 p-3 text-sm text-red-800">
-          You do not have permission to upload documents.
-        </div>
-      </div>
+      <Alert type="error">
+        You do not have permission to upload documents.
+      </Alert>
     );
   }
 
   function validate() {
-    if (!title.trim()) return "Title is required.";
-    if (!categoryId) return "Category is required.";
-    if (!departmentId) return "Department is required.";
-    if (!accessLevel) return "Access level is required.";
-    if (!file) return "File is required.";
+    const errs = {};
 
-    const ext = file.name.split(".").pop().toLowerCase();
-    if (!ALLOWED_EXT.includes(ext)) {
-      return `Invalid file type. Allowed: ${ALLOWED_EXT.join(", ")}`;
+    if (!title.trim()) errs.title = "Title is required.";
+    if (!categoryId) errs.category = "Category is required.";
+    if (!departmentId) errs.department = "Department is required.";
+    if (!file) errs.file = "File is required.";
+
+    if (file) {
+      const ext = file.name.split(".").pop().toLowerCase();
+      if (!ALLOWED_EXT.includes(ext)) {
+        errs.file = `Invalid file type. Allowed: ${ALLOWED_EXT.join(", ")}`;
+      }
+      if (file.size > 10 * 1024 * 1024) {
+        errs.file = "File too large. Max 10MB.";
+      }
     }
-    if (file.size > 10 * 1024 * 1024) {
-      return "File too large. Max 10MB.";
-    }
-    return "";
+
+    setFieldErrors(errs);
+    return Object.keys(errs).length === 0;
   }
 
   async function onSubmit(e) {
@@ -78,11 +87,7 @@ export default function UploadDocument() {
     setError("");
     setSuccess("");
 
-    const msg = validate();
-    if (msg) {
-      setError(msg);
-      return;
-    }
+    if (!validate()) return;
 
     try {
       setBusy(true);
@@ -90,10 +95,8 @@ export default function UploadDocument() {
       const form = new FormData();
       form.append("title", title);
       form.append("description", description);
-      form.append("category_id", categoryId);
-      form.append("document_category_id", categoryId)
+      form.append("document_category_id", categoryId);
       form.append("department_id", departmentId);
-      form.append("document_department_id", departmentId);
       form.append("access_level", accessLevel);
       form.append("file", file);
 
@@ -101,10 +104,11 @@ export default function UploadDocument() {
         headers: { "Content-Type": "multipart/form-data" },
       });
 
-      setSuccess("Upload successful.");
-      setTimeout(() => nav("/documents"), 600);
+      setSuccess("Document uploaded successfully!");
+
+      setTimeout(() => nav("/documents"), 700);
     } catch (err) {
-      setError(err?.response?.data?.message || "Upload failed.");
+      setError(extractErrorMessage(err, "Upload failed."));
     } finally {
       setBusy(false);
     }
@@ -123,17 +127,8 @@ export default function UploadDocument() {
         </button>
       </div>
 
-      {success && (
-        <div className="mt-4 rounded-lg border border-green-200 bg-green-50 p-3 text-sm text-green-800">
-          {success}
-        </div>
-      )}
-
-      {error && (
-        <div className="mt-4 rounded-lg border border-red-200 bg-red-50 p-3 text-sm text-red-800">
-          {error}
-        </div>
-      )}
+      {success && <Alert type="success">{success}</Alert>}
+      {error && <Alert type="error">{error}</Alert>}
 
       <form onSubmit={onSubmit} className="mt-5 grid gap-3">
         <div>
@@ -142,8 +137,10 @@ export default function UploadDocument() {
             className="mt-1 w-full rounded-lg border p-3 text-sm"
             value={title}
             onChange={(e) => setTitle(e.target.value)}
-            placeholder="e.g. Employee Handbook"
           />
+          {fieldErrors.title && (
+            <div className="text-xs text-red-600 mt-1">{fieldErrors.title}</div>
+          )}
         </div>
 
         <div>
@@ -153,7 +150,6 @@ export default function UploadDocument() {
             rows="3"
             value={description}
             onChange={(e) => setDescription(e.target.value)}
-            placeholder="optional"
           />
         </div>
 
@@ -163,7 +159,7 @@ export default function UploadDocument() {
             <select
               className="mt-1 w-full rounded-lg border p-3 text-sm"
               value={categoryId}
-              onChange={(e) => setCategoryId(String(e.target.value))}
+              onChange={(e) => setCategoryId(e.target.value)}
             >
               <option value="">Select</option>
               {categories.map((c) => (
@@ -172,6 +168,9 @@ export default function UploadDocument() {
                 </option>
               ))}
             </select>
+            {fieldErrors.category && (
+              <div className="text-xs text-red-600 mt-1">{fieldErrors.category}</div>
+            )}
           </div>
 
           <div>
@@ -179,7 +178,7 @@ export default function UploadDocument() {
             <select
               className="mt-1 w-full rounded-lg border p-3 text-sm"
               value={departmentId}
-              onChange={(e) => setDepartmentId(String(e.target.value))}
+              onChange={(e) => setDepartmentId(e.target.value)}
             >
               <option value="">Select</option>
               {departments.map((d) => (
@@ -188,6 +187,9 @@ export default function UploadDocument() {
                 </option>
               ))}
             </select>
+            {fieldErrors.department && (
+              <div className="text-xs text-red-600 mt-1">{fieldErrors.department}</div>
+            )}
           </div>
 
           <div>
@@ -207,13 +209,13 @@ export default function UploadDocument() {
         <div>
           <label className="text-sm font-medium">File *</label>
           <input
-            className="mt-1 w-full rounded-lg border p-3 text-sm"
             type="file"
+            className="mt-1 w-full rounded-lg border p-3 text-sm"
             onChange={(e) => setFile(e.target.files?.[0] || null)}
           />
-          <div className="mt-1 text-xs text-gray-500">
-            Allowed: PDF, DOCX, XLSX, JPG, PNG. Max 10MB.
-          </div>
+          {fieldErrors.file && (
+            <div className="text-xs text-red-600 mt-1">{fieldErrors.file}</div>
+          )}
         </div>
 
         <button
