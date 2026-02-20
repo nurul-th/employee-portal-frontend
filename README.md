@@ -1,36 +1,92 @@
-<<<<<<< HEAD
-# employee-portal-frontend
-Employee Document Portal frontend codebase 
 
-# React + Vite
+---
 
-This template provides a minimal setup to get React working in Vite with HMR and some ESLint rules.
+# 🔥 README — FRONTEND  
+📁 `frontend-employee-document-portal/README.md`
 
-Currently, two official plugins are available:
+# Employee Document Portal — Frontend
 
-- [@vitejs/plugin-react](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react) uses [Babel](https://babeljs.io/) (or [oxc](https://oxc.rs) when used in [rolldown-vite](https://vite.dev/guide/rolldown)) for Fast Refresh
-- [@vitejs/plugin-react-swc](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react-swc) uses [SWC](https://swc.rs/) for Fast Refresh
+Frontend application for Employee Document Portal built with **React + Vite**.
 
-## React Compiler
+---
 
-The React Compiler is not enabled on this template because of its impact on dev & build performances. To add it, see [this documentation](https://react.dev/learn/react-compiler/installation).
+## 🚀 Tech Stack
 
-## Expanding the ESLint configuration
+- React
+- Vite
+- Axios
+- React Router DOM
+- Tailwind CSS
 
-If you are developing a production application, we recommend using TypeScript with type-aware lint rules enabled. Check out the [TS template](https://github.com/vitejs/vite/tree/main/packages/create-vite/template-react-ts) for information on how to integrate TypeScript and [`typescript-eslint`](https://typescript-eslint.io) in your project.
+---
 
-67a3558 (Initial Commit)
+## 📦 Features
 
-Demo Accounts
+- Login authentication
+- Protected routes
+- Role-based UI rendering
+- Dashboard:
+  - Recent uploads (Top 5)
+  - Top downloads (Top 5)
+- Documents list:
+  - Search (title + description)
+  - Filter by category
+  - Filter by department
+  - Sorting options
+  - Pagination
+- Upload document
+- Document details page
+- Edit metadata
+- Delete with confirmation dialog
+- Success & error alerts
+- Loading states & empty states
 
-Admin:
-admin@example.com
-password
+---
 
-Manager:
-manager@example.com
-password
+## ⚙️ Installation
 
-Employee:
-employee@example.com
-password
+### 1. Open frontend folder
+
+```bash
+cd frontend-employee-document-portal
+
+2. Install dependencies
+    npm install
+
+3. Environment Setup - create .env file
+    VITE_API_URL=http://localhost:8000
+
+4. Run development server
+    npm run dev
+
+    Frontend URL -> http://localhost:5173
+
+5. Authentication Flow
+
+    - User login
+    - Backend returns token
+    - Token stored in localStorage
+    - Axios interceptor auto attaches token
+
+👥 Demo Accounts
+Role	| Email	    | Password
+Admin	admin@example.com | password
+Manager	manager@example.com | password
+Employee	employee@example.com | password
+
+6. Pages
+    /login
+    /dashboard
+    /documents
+    /documents/:id
+    /documents/upload
+    /documents/:id/edit
+
+7. UI Requirements Covered
+
+    - Success messages (green)
+    - Error messages (red)
+    - Confirmation dialog (delete)
+    - Empty states
+    - Form validation display
+    - Loading spinner
